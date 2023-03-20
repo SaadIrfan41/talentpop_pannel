@@ -9,6 +9,7 @@ import {
   Create_Account_Schema,
   RegisterUserTypes,
 } from '@/app/api/signup/route'
+import { User } from '@prisma/client'
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -60,7 +61,7 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/login',
-    signOut: '/login',
+    // signOut: '/login',
   },
   callbacks: {
     session: ({ session, token }) => {
@@ -70,16 +71,18 @@ export const authOptions: NextAuthOptions = {
         user: {
           ...session.user,
           id: token.id,
+          phoneNumber: token.phoneNumber,
         },
       }
     },
     jwt: ({ token, user }) => {
       console.log('JWT Callback', { token, user })
       if (user) {
-        // const u = user as unknown as any
+        const u = user as unknown as User
         return {
           ...token,
           id: user.id,
+          phoneNumber: u.phoneNumber,
         }
       }
       return token
@@ -113,7 +116,7 @@ const loginUser = async (email_phone: string, password: string) => {
       id: user.id,
       email: user.companyEmail,
       name: user.companyName,
-      // randomKey: 'Hey cool',
+      phoneNumber: user.phoneNumber,
     }
   } catch (error: any) {
     throw new Error(error)
@@ -128,8 +131,6 @@ const registerUser = async (
   dateOfBirth: Date,
   companySize: string
 ) => {
-  console.log(typeof phoneNumber)
-
   let user
   try {
     if (companyEmail !== 'undefined') {
@@ -183,6 +184,7 @@ const registerUser = async (
       id: newUser.id,
       email: newUser.companyEmail,
       name: newUser.companyName,
+      phoneNumber: newUser.phoneNumber,
       // randomKey: 'Hey cool',
     }
     // const res = Create_Account_Schema.safeParse(companyName, companyEmail)
