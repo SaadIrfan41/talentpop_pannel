@@ -128,30 +128,51 @@ const registerUser = async (
   dateOfBirth: Date,
   companySize: string
 ) => {
+  console.log(typeof phoneNumber)
+
+  let user
   try {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ companyEmail: companyEmail }, { phoneNumber: phoneNumber }],
-      },
-    })
+    if (companyEmail !== 'undefined') {
+      user = await prisma.user.findUnique({
+        where: {
+          companyEmail,
+        },
+      })
+    }
+    if (phoneNumber !== 'undefined') {
+      user = await prisma.user.findUnique({
+        where: {
+          phoneNumber,
+        },
+      })
+    }
+    if (phoneNumber !== 'undefined' && companyName !== 'undefined') {
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [{ companyEmail: companyEmail }, { phoneNumber: phoneNumber }],
+        },
+      })
+    }
+
+    console.log(user)
+
     if (user) {
       throw new Error('This User Allready Exist')
     }
-    // console.log(
-    //   companyName,
-    //   companyEmail,
-    //   password,
-    //   phoneNumber,
-    //   dateOfBirth,
-    //   companySize
-    // )
+    console.log(
+      companyName,
+      companyEmail,
+      password,
+      phoneNumber,
+      dateOfBirth,
+      companySize
+    )
 
-    // console.log(typeof)
     const cryptedPassword = await hash(password, 12)
     const newUser = await prisma.user.create({
       data: {
-        companyEmail: companyEmail,
-        phoneNumber: phoneNumber,
+        companyEmail: companyEmail === 'undefined' ? null : companyEmail,
+        phoneNumber: phoneNumber === 'undefined' ? null : phoneNumber,
         companyName: companyName,
         companySize: parseInt(companySize),
         dateOfBirth: new Date(dateOfBirth),

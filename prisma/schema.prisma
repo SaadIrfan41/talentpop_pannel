@@ -32,7 +32,7 @@ model User {
   // accounts      Account[]
   sessions    Session[]
 
-  @@unique([companyEmail, phoneNumber])
+  // @@unique([companyEmail, phoneNumber])
 }
 
 // model Account {

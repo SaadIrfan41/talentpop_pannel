@@ -164,7 +164,7 @@ const CreateAccount = () => {
 
             type={showPassword == true ? 'text' : 'password'}
             {...register('password')}
-            placeholder='Phone number, email address'
+            placeholder='Password'
             className={`  w-full rounded-lg border  border-[#BECDCC] pt-3   pb-4 pl-4 outline-none placeholder:text-lg placeholder:font-normal placeholder:text-[##BECDCC] ${
               errors.password ? 'border-2 border-red-500' : ''
             }`}
