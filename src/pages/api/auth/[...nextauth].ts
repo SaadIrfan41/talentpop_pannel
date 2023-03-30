@@ -15,7 +15,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
-  adapter: PrismaAdapter(prisma),
+  // adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'Sign in',
@@ -64,32 +64,65 @@ export const authOptions: NextAuthOptions = {
     // signOut: '/login',
   },
   callbacks: {
-    session: ({ session, token }) => {
+    async session({ session, token }) {
       console.log('Session Callback', { session, token })
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          phoneNumber: token.phoneNumber,
+      const user = await prisma.user.findUnique({
+        where: {
+          id: token.sub,
         },
-      }
-    },
-    jwt: ({ token, user }) => {
-      console.log('JWT Callback', { token, user })
+        // select: { password: false },
+      })
+
       if (user) {
-        const u = user as unknown as User
+        const u = user as User
         return {
-          ...token,
-          id: user.id,
-          phoneNumber: u.phoneNumber,
+          ...session,
+          user: {
+            ...session.user,
+            id: u.id,
+            phoneNumber: u.phoneNumber,
+            customerIntakeFormSubmited: u.intakeFormSubmited,
+          },
         }
       }
-      return token
+      return session
+      // return {
+      //   ...session,
+      //   user: {
+      //     ...session.user,
+      //     id: token.id,
+      //     phoneNumber: token.phoneNumber,
+      //     customerIntakeFormSubmited: token.intakeFormSubmited,
+      //   },
+      // }
     },
+    // jwt: ({ token, user }) => {
+    //   console.log('JWT Callback', { token })
+    //   console.log('JWT Callback USER', { user })
+    //   if (user) {
+    //     const u = user as User
+    //     return {
+    //       ...token,
+    //       id: user.id,
+    //       phoneNumber: u.phoneNumber,
+    //       customerIntakeFormSubmited: u.intakeFormSubmited,
+    //     }
+    //   }
+    //   return token
+    // },
   },
 }
 export default NextAuth(authOptions)
+
+function exclude<User, Key extends keyof User>(
+  user: User,
+  keys: Key[]
+): Omit<User, Key> {
+  for (let key of keys) {
+    delete user[key]
+  }
+  return user
+}
 
 const loginUser = async (email_phone: string, password: string) => {
   if (!email_phone || !password) {
@@ -111,12 +144,14 @@ const loginUser = async (email_phone: string, password: string) => {
     if (!isPasswordValid) {
       throw new Error('Invalid Credentials')
     }
-    console.log(user)
+    const userWithoutPassword = exclude(user, ['password'])
+    console.log(userWithoutPassword)
     return {
-      id: user.id,
-      email: user.companyEmail,
-      name: user.companyName,
-      phoneNumber: user.phoneNumber,
+      id: userWithoutPassword.id,
+      email: userWithoutPassword.companyEmail,
+      name: userWithoutPassword.companyName,
+      phoneNumber: userWithoutPassword.phoneNumber,
+      customerIntakeFormSubmited: userWithoutPassword.intakeFormSubmited,
     }
   } catch (error: any) {
     throw new Error(error)
@@ -180,11 +215,13 @@ const registerUser = async (
         password: cryptedPassword,
       },
     })
+
     return {
       id: newUser.id,
       email: newUser.companyEmail,
       name: newUser.companyName,
       phoneNumber: newUser.phoneNumber,
+      customerIntakeFormSubmited: newUser.intakeFormSubmited,
       // randomKey: 'Hey cool',
     }
     // const res = Create_Account_Schema.safeParse(companyName, companyEmail)
